@@ -1,94 +1,73 @@
-import { React} from 'react';
-import {Component } from 'react';
+import { useEffect, useState } from 'react';
+import { nanoid } from 'nanoid';
 import ContactForm from './ContactForm/ContactForm';
 import {ContactList} from './ContactList/ContactList';
-import {Filter} from './Filter/Filter';
+import { Filter } from './Filter/Filter';
 
-export default class App extends Component {
-  state = {
-    contacts: [
+
+export default function App() {
+  const [contacts, setContacts] = useState([
       { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
       { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
       { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
       { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
-
-  componentDidMount() {
-    const contactsLocalStorage = JSON.parse(localStorage.getItem("contacts"));
-    if (contactsLocalStorage?.length) {
-      this.setState({
-        contacts: contactsLocalStorage
-      })
-    }
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      const contactsLocalStorage = JSON.stringify(this.state.contacts);
-      localStorage.setItem("contacts", contactsLocalStorage)
-    }
-
-  }
-
-
-  handleAddContact = newContact =>
+    ])
   
-    this.setState(({ contacts }) => ({
-      contacts: [...contacts, newContact],
-    }));
+  const [filter, setFilter] = useState('');
+  
 
-  handleCheckValue = (name) => {
-    const { contacts } = this.state;
-    const result = !!contacts.find(contact => contact.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-    result && alert(`${name} is already in contacts`);
+  const handleAddContact = ({ name, number }) => {
+    const newContact = {
+      id: nanoid(),
+      name,
+      number,
+    }
+    return contacts.find(
+      contact => newContact.name.toLocaleLowerCase() === contact.name.toLocaleLowerCase()) ? 
+        alert(`${newContact.name} is already in contacts`) : setContacts(() => [...contacts, newContact ]);
 
-    return !result;
+
+    }
+
+  
+  const handleremoveContact = id=> {
+     setContacts(() => contacts.filter(contact => contact.id !== id));
   };
 
+  const onFilter = () => {
 
-  handleremoveContact = id =>
-    this.setState(({ contacts }) => ({
-      contacts: contacts.filter(contact => contact.id !== id),
-    }));
+    if (!filter) {
+      return contacts;
+    }
+    
+    contacts.filter(contact =>
+      contact.name.toLowerCase().includes(filter.toLowerCase()));
+  };
 
-
-  handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    this.setState({
-      [name]: value
-    })
+   const handleFilterChange = e => {
+    setFilter(e.carrentTarget.value);
 }
-
-
-  getNormalize = () => {
-    const { contacts, filter } = this.state;
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(filter.toLowerCase())
-    );
-  };
-
-  render() {
-    const { filter } = this.state;
-    const normalizeContacts = this.getNormalize();
-    return (
-      <>
+  
+  return (
+ <>
         <ContactForm
-          onAddContact={this.handleAddContact}
-          onCheck={this.handleCheckValue}
+          onAddContact={handleAddContact}
         />
 
         <ContactList
-          contacts={normalizeContacts}
-          onRemove={this.handleremoveContact}
+          contacts={onFilter()}
+          onRemove={handleremoveContact}
         >
-         <Filter filter={filter} onChange={this.handleFilterChange} /> 
-          </ContactList>
-          
+         <Filter value={filter} onChange={handleFilterChange} /> 
+          </ContactList>  
       </>
-    );
-  }
+  )
+  
 }
+  
+
 
